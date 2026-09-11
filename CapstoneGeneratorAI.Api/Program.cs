@@ -1,51 +1,49 @@
-using CapstoneGeneratorAI.Infrastructure;
+using CapstoneGeneratorAI.Api.Features.CapstoneIdeas;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+// Capstone ideas feature: options plus the typed Ollama client it talks to.
+builder.Services.Configure<OllamaOptions>(
+    builder.Configuration.GetSection(OllamaOptions.SectionName));
+
+builder.Services.AddHttpClient<OllamaIdeaGenerator>((provider, client) =>
+{
+    var options = builder.Configuration
+        .GetSection(OllamaOptions.SectionName)
+        .Get<OllamaOptions>() ?? new OllamaOptions();
+
+    client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+    // Generating on a small local model can take a while on cold start.
+    client.Timeout = TimeSpan.FromMinutes(5);
+});
+
+// NOTE: the API has no authentication and accepts any origin. Anyone who can reach it
+// can spend time on the local model, so keep it off the public internet as-is.
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.AllowAnyOrigin()  
+        policy.AllowAnyOrigin()
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
 
-builder.WebHost.ConfigureKestrel(options =>
-{
-    options.ListenAnyIP(8080);
-    options.ListenAnyIP(8081, listenOptions =>
-    {
-        listenOptions.UseHttps(); 
-    });
-});
-
 var app = builder.Build();
+
 app.UseCors();
-// Configure the HTTP request pipeline.
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-  app.MapScalarApiReference(options =>
-    {
-        options.Servers = new[]
-        {
-             new ScalarServer ("https://localhost:5001", "Local Development")
-        };
-    });
+    app.MapScalarApiReference();
 }
 
 app.UseHttpsRedirection();
-
-app.UseAuthorization();
 
 app.MapControllers();
 app.MapGet("/", () => "CapstoneGeneratorAI API is running!");

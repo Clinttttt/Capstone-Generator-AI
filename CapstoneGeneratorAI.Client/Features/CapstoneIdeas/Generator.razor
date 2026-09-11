@@ -1,0 +1,115 @@
+@page "/"
+@rendermode InteractiveServer
+@using CapstoneGeneratorAI.Client.Features.CapstoneIdeas
+@inject CapstoneIdeaApiClient IdeaApi
+
+<PageTitle>Capstone Generator</PageTitle>
+
+<div class="mt-3 sm:mt-3 lg:mt-8 absolute text-center top-0 left-1/2 transform -translate-x-1/2">
+    <h1 class="text-md sm:text-2xl lg:text-4xl font-bold bg-gradient-to-b from-neutral-600 to-stone-950 bg-clip-text text-transparent">Capstone Generator</h1>
+    <h4 class="text-xs font-light sm:text-md lg:text-lg text-neutral my-1">Find your perfect capstone idea today!</h4>
+</div>
+
+<div class="my-6 sm:my-3 lg:my-9 flex flex-col lg:flex-row gap-3 sm:gap-3 md:gap-4 lg:gap-10 items-center justify-center h-screen justify-around">
+
+    <div class="h-[34%] sm:h-[34%] w-[93%] md:h-[36%] lg:h-[46%] lg:w-[33%] relative rounded-md bg-base-100" style="border: solid 1px rgba(0,0,0,0.2)">
+        <div class="top-4 left-4 p-4 w-full">
+            <h2 class="text-lg font-semibold mb-2 text-neutral">Filters</h2>
+
+            <select aria-label="Industry" @bind="request.Industry" class="select select-accent !w-full my-1" style="border: solid 1px rgba(0,0,0,0.2)">
+                <option value="@Industry.All" selected>All Industries</option>
+                <option value="@Industry.Agriculture">Agriculture</option>
+                <option value="@Industry.Business">Business</option>
+                <option value="@Industry.Cybersecurity">Cyber Security</option>
+                <option value="@Industry.Education">Education</option>
+                <option value="@Industry.Energy">Energy</option>
+                <option value="@Industry.Entertainment">Entertainment</option>
+                <option value="@Industry.Government">Government</option>
+                <option value="@Industry.Healthcare">Health Care</option>
+                <option value="@Industry.Technology">Technology</option>
+            </select>
+
+            <h2 class="text-lg font-semibold my-2 text-neutral">Project Type</h2>
+
+            <select aria-label="Project type" @bind="request.Type" class="select select-accent !w-full my-1" style="border: solid 1px rgba(0,0,0,0.2)">
+                <option value="@ProjectType.All" selected>All Project Types</option>
+                <option value="@ProjectType.AI_App">AI Application</option>
+                <option value="@ProjectType.Data_App">Data Application</option>
+                <option value="@ProjectType.Desktop_App">Desktop Application</option>
+                <option value="@ProjectType.IoT_App">IoT Application</option>
+                <option value="@ProjectType.Mobile_App">Mobile Application</option>
+                <option value="@ProjectType.Web_App">Web Application</option>
+            </select>
+
+            <div class="justify-center flex w-full my-4">
+                <button @onclick="Generate" disabled="@isGenerating"
+                        class="btn btn-wide btn-accent text-md focus:outline-none focus:ring-2 focus:ring-accent">
+                    @(isGenerating ? "Generating..." : "Generate Ideas")
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="h-[48%] sm:h-[43%] w-[93%] md:h-[42%] lg:h-[62%] lg:w-[40%] rounded-md bg-base-100 relative overflow-auto scrollbar-hide flex flex-col"
+         style="border: solid 1px rgba(0,0,0,0.2)" aria-live="polite">
+        @if (idea is not null)
+        {
+            <div class="justify-center flex-1 p-3">
+                <h2 class="text-2xl font-bold my-2 text-neutral">@idea.Title</h2>
+                <div class="my-2">
+                    <p style="color:rgb(101, 110, 123)">@idea.Description</p>
+                </div>
+                <h3 class="text-lg font-semibold my-2 text-accent">Features</h3>
+                <ul>
+                    @foreach (var feature in idea.Features?.Take(5) ?? Enumerable.Empty<string>())
+                    {
+                        <li class="text-neutral">@feature</li>
+                    }
+                </ul>
+            </div>
+            <div class="p-3 flex justify-end">
+                <button @onclick="Generate" disabled="@isGenerating"
+                        class="btn btn-accent max-w-fit rounded-sm focus:outline-none focus:ring-2 focus:ring-accent">
+                    Next Idea
+                    <svg class="w-[25px] h-[25px] text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="flex-1 flex items-center justify-center">
+                <p style="color:rgb(155, 161, 170)">@placeholder</p>
+            </div>
+        }
+    </div>
+
+</div>
+
+@code {
+    private const string EmptyMessage = "Your capstone ideas will appear here";
+
+    private IdeaRequest request = new();
+    private IdeaResponse? idea;
+    private bool isGenerating;
+    private string placeholder = EmptyMessage;
+
+    private async Task Generate()
+    {
+        isGenerating = true;
+        placeholder = "Asking the model, this can take a moment...";
+
+        try
+        {
+            idea = await IdeaApi.AskAsync(request);
+            placeholder = idea is null
+                ? "The generator is unavailable right now. Please try again."
+                : EmptyMessage;
+        }
+        finally
+        {
+            isGenerating = false;
+        }
+    }
+}

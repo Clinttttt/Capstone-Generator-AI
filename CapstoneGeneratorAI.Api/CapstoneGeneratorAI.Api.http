@@ -1,6 +1,12 @@
-@CapstoneGeneratorAI.Api_HostAddress = http://localhost:5255
+@CapstoneGeneratorAI.Api_HostAddress = https://localhost:7094
 
-GET {{CapstoneGeneratorAI.Api_HostAddress}}/weatherforecast/
+POST {{CapstoneGeneratorAI.Api_HostAddress}}/api/ideas/ask
+Content-Type: application/json
 Accept: application/json
+
+{
+  "industry": 3,
+  "type": 0
+}
 
 ###

@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="CapstoneGeneratorAI.Api/CapstoneGeneratorAI.Api.csproj" />
+  <Project Path="CapstoneGeneratorAI.Client/CapstoneGeneratorAI.Client.csproj" />
+</Solution>
